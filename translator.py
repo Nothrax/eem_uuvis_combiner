@@ -1,6 +1,9 @@
 import argparse
 import csv
 from enum import Enum
+from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QPushButton, QLineEdit, QFileDialog, QLabel, QWidget, QComboBox
+from PyQt6.QtCore import Qt
+
 
 class Mode(Enum):
     EB = 1
@@ -96,5 +99,73 @@ def main():
     translator.translate()
 
 
+#if __name__ == "__main__":
+    # add a simple pyqt6 gui to select the files
+
+ #   main()
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("File Selector")
+
+        self.layout = QVBoxLayout()
+
+        self.eem_line_edit = QLineEdit()
+        self.uvvis_line_edit = QLineEdit()
+        self.output_line_edit = QLineEdit()
+
+        self.mode_combo_box = QComboBox()
+        self.mode_combo_box.addItems([mode.name for mode in Mode])
+
+        self.layout.addWidget(QLabel("EEM File"))
+        self.layout.addWidget(self.eem_line_edit)
+        self.layout.addWidget(QPushButton("Browse", clicked=self.browse_eem))
+
+        self.layout.addWidget(QLabel("UVVIS File"))
+        self.layout.addWidget(self.uvvis_line_edit)
+        self.layout.addWidget(QPushButton("Browse", clicked=self.browse_uvvis))
+
+        self.layout.addWidget(QLabel("Output File"))
+        self.layout.addWidget(self.output_line_edit)
+        self.layout.addWidget(QPushButton("Browse", clicked=self.browse_output))
+
+        self.layout.addWidget(QLabel("Mode"))
+        self.layout.addWidget(self.mode_combo_box)
+
+        self.layout.addWidget(QPushButton("Start", clicked=self.start))
+
+        container = QWidget()
+        container.setLayout(self.layout)
+        self.setCentralWidget(container)
+
+    def browse_eem(self):
+        file, _ = QFileDialog.getOpenFileName(self, "Select EEM file")
+        if file:
+            self.eem_line_edit.setText(file)
+
+    def browse_uvvis(self):
+        file, _ = QFileDialog.getOpenFileName(self, "Select UVVIS file")
+        if file:
+            self.uvvis_line_edit.setText(file)
+
+    def browse_output(self):
+        file, _ = QFileDialog.getSaveFileName(self, "Select output file")
+        if file:
+            self.output_line_edit.setText(file)
+
+    def start(self):
+        eem_filename = self.eem_line_edit.text()
+        uvvis_filename = self.uvvis_line_edit.text()
+        output_filename = self.output_line_edit.text()
+        mode = Mode[self.mode_combo_box.currentText()]
+
+        translator = Translator(eem_filename, uvvis_filename, output_filename, mode)
+        translator.translate()
+
 if __name__ == "__main__":
-    main()
+    app = QApplication([])
+    window = MainWindow()
+    window.show()
+    app.exec()
