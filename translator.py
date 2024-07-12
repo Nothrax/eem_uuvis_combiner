@@ -156,13 +156,16 @@ class MainWindow(QMainWindow):
             self.output_line_edit.setText(file)
 
     def start(self):
-        eem_filename = self.eem_line_edit.text()
-        uvvis_filename = self.uvvis_line_edit.text()
-        output_filename = self.output_line_edit.text()
+        uvvis_filename = ""
         mode = Mode[self.mode_combo_box.currentText()]
+        if mode == Mode.EB:
+            uvvis_filename = self.uvvis_line_edit.text()
+        eem_filename = self.eem_line_edit.text()
+        output_filename = self.output_line_edit.text()
 
         translator = Translator(eem_filename, uvvis_filename, output_filename, mode)
         translator.translate()
+
 
 if __name__ == "__main__":
     app = QApplication([])
