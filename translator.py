@@ -1,21 +1,33 @@
-#import pandas as pd
+import argparse
 import csv
+from enum import Enum
 
-# create a class for the data with parsing functions
+class Mode(Enum):
+    EB = 1
+    FL = 2
+
+
 class Translator:
-    uuvis_filename = '/home/nothrax/Documents/fch/UVVIS_raw.csv'
-    eem_filename = '/home/nothrax/Documents/fch/EEM_raw_EB.csv'
-
-    def __init__(self, eem_filename: str, uuvis_filename: str):
+    def __init__(self, eem_filename: str, uuvis_filename: str, output_filename: str, mode: Mode):
         self.eem_values = []
         self.uuvis_values = {}
         self.offsets = []
         self.output_data = []
         self.uuvis_filename = uuvis_filename
         self.eem_filename = eem_filename
-        self.output_filename = 'output.csv'
+        self.output_filename = output_filename
+        self.mode = mode
 
     def translate(self):
+        if self.mode == Mode.EB:
+            self._translate_eb()
+        elif self.mode == Mode.FL:
+            self._translate_fl()
+
+    def _translate_fl(self):
+        pass
+
+    def _translate_eb(self):
         self._parse_eem_file()
         self._parse_uuvis_file()
 
@@ -73,10 +85,14 @@ class Translator:
                     self.uuvis_values[int(float(tokens[0]))] = float(tokens[1])
 
 def main():
-    uuvis_filename = '/home/nothrax/Documents/fch/UVVIS_raw.csv'
-    eem_filename = '/home/nothrax/Documents/fch/EEM_raw_EB.csv'
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--eem")
+    parser.add_argument("--uvvis")
+    parser.add_argument("--output")
+    parser.add_argument("--mode", choices=[mode.name for mode in Mode])
+    args = parser.parse_args()
 
-    translator = Translator(eem_filename, uuvis_filename)
+    translator = Translator(args.eem, args.uvvis, args.output, Mode[args.mode])
     translator.translate()
 
 
