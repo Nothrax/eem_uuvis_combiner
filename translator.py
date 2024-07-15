@@ -2,7 +2,8 @@ import argparse
 import csv
 from enum import Enum
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QPushButton, QLineEdit, QFileDialog, QLabel, QWidget, QComboBox
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QMessageBox
+import pandas as pd
 
 
 class Mode(Enum):
@@ -28,7 +29,21 @@ class Translator:
             self._translate_fl()
 
     def _translate_fl(self):
-        pass
+        self._parse_fl_file()
+        self._parse_uuvis_file()
+
+        self.output_data.append(['lem (nm)', 'lex (nm)', 'IF', 'Aex (–)', 'Aem (–)', 'IFC'])
+
+        for eem_value in self.eem_values:
+            lem_value = int(eem_value[0])
+            lex_value = int(eem_value[1])
+            if_value = float(eem_value[2])
+            aex_value = float(self.uuvis_values[eem_value[1]])
+            aem_value = float(self.uuvis_values[eem_value[0]])
+            ifc_value = float(if_value * 10 ** ((aex_value + aem_value) * 0.5))
+            self.output_data.append([lem_value, lex_value, if_value, aex_value, aem_value, ifc_value])
+
+        self._write_output_file()
 
     def _translate_eb(self):
         self._parse_eem_file()
@@ -38,13 +53,12 @@ class Translator:
 
         detector_index = 1
         for offset in self.offsets:
-            self._generate_data_entry(offset, detector_index)
+            self._generate_eb_data_entry(offset, detector_index)
             detector_index += 1
 
-        # write the output data to a csv file, with semicolon separator and comas for floats
         self._write_output_file()
 
-    def _generate_data_entry(self, offset: int, detector_index: int):
+    def _generate_eb_data_entry(self, offset: int, detector_index: int):
         for eem_value in self.eem_values:
             lem_value = int(eem_value[0])
             lex_value = int(offset)
@@ -80,12 +94,15 @@ class Translator:
 
     def _parse_uuvis_file(self):
         with open(self.uuvis_filename, 'r') as file:
-            for line_number, line in enumerate(file, start=1):
-                if line_number <= 47:
-                    continue
-                else:
-                    tokens = line.strip().split(',')
-                    self.uuvis_values[int(float(tokens[0]))] = float(tokens[1])
+            df = pd.read_excel(self.uuvis_filename, header=None, skiprows=47)
+            for index, row in df.iterrows():
+                self.uuvis_values[int(float(row[0]))] = float(row[1])
+
+    def _parse_fl_file(self):
+        df = pd.read_excel(self.eem_filename, header=None, skiprows=1)
+        for index, row in df.iterrows():
+            tokens = row.values
+            self.eem_values.append([float(token) if pd.notna(token) else 0 for token in tokens])
 
 def main():
     parser = argparse.ArgumentParser()
@@ -156,15 +173,14 @@ class MainWindow(QMainWindow):
             self.output_line_edit.setText(file)
 
     def start(self):
-        uvvis_filename = ""
         mode = Mode[self.mode_combo_box.currentText()]
-        if mode == Mode.EB:
-            uvvis_filename = self.uvvis_line_edit.text()
+        uvvis_filename = self.uvvis_line_edit.text()
         eem_filename = self.eem_line_edit.text()
         output_filename = self.output_line_edit.text()
 
         translator = Translator(eem_filename, uvvis_filename, output_filename, mode)
         translator.translate()
+        QMessageBox.information(self, "Success", "Translation completed successfully!")
 
 
 if __name__ == "__main__":

@@ -2,3 +2,6 @@
 pythonProject
 output.csv
 .idea
+build
+dist
+translator.spec
